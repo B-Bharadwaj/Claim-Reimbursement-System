@@ -22,13 +22,33 @@ class Expense(models.Model):
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
     description = models.TextField(blank=True)
     receipt = models.FileField(upload_to="receipts/", blank=True, null=True)
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
 
     # Who submitted and who acted
-    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="expenses")
-    manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="manager_expenses")
-    finance_reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="finance_expenses")
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="claims_submitted",
+    )
 
-    status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
+    manager_comment = models.TextField(blank=True, default="")
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="claims_approved",
+    )
+
+    finance_comment = models.TextField(blank=True, default="")
+    paid_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="claims_paid",
+    )
+
+    payment_reference = models.CharField(max_length=100, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

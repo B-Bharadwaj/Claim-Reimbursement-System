@@ -1,21 +1,5 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
+/* eslint-disable prettier/prettier */
 import { useState } from "react";
-
-// react-router-dom components
 import { Link } from "react-router-dom";
 
 // @mui material components
@@ -41,10 +25,19 @@ import BasicLayout from "layouts/authentication/components/BasicLayout";
 // Images
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
-// API
-import { API_BASE } from "api";
+function decodeJwt(token) {
+  const payload = token.split(".")[1];
+  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+  return JSON.parse(jsonPayload);
+}
 
-function Basic() {
+function SignIn() {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -58,7 +51,7 @@ function Basic() {
     event.preventDefault();
 
     try {
-      const res = await fetch(`${API_BASE}token/`, {
+      const res = await fetch("http://127.0.0.1:8000/api/token/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,16 +60,30 @@ function Basic() {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("refresh", data.refresh);
-        window.location.href = "/dashboard";
-      } else {
+      if (!res.ok) {
         alert("Invalid credentials. Please try again.");
+        return;
+      }
+
+      const data = await res.json();
+
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
+
+      const decoded = decodeJwt(data.access);
+      localStorage.setItem("role", decoded.role);
+
+      // Redirect based on role
+      if (decoded.role === "MANAGER") {
+        window.location.href = "/manager/review-claims";
+      } else if (decoded.role === "FINANCE") {
+        window.location.href = "/finance/payments";
+      } else {
+        window.location.href = "/employee/my-claims";
       }
     } catch (error) {
       console.error("Login failed:", error);
+      alert("Login failed. Check console.");
     }
   };
 
@@ -115,6 +122,7 @@ function Basic() {
             </Grid>
           </Grid>
         </MDBox>
+
         <MDBox pt={4} pb={3} px={3}>
           <MDBox component="form" role="form" onSubmit={handleSubmit}>
             <MDBox mb={2}>
@@ -137,6 +145,7 @@ function Basic() {
                 fullWidth
               />
             </MDBox>
+
             <MDBox display="flex" alignItems="center" ml={-1}>
               <Switch checked={rememberMe} onChange={handleSetRememberMe} />
               <MDTypography
@@ -149,11 +158,13 @@ function Basic() {
                 &nbsp;&nbsp;Remember me
               </MDTypography>
             </MDBox>
+
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth type="submit">
-                Sign in
+              <MDButton type="submit" variant="gradient" color="info" fullWidth>
+                sign in
               </MDButton>
             </MDBox>
+
             <MDBox mt={3} mb={1} textAlign="center">
               <MDTypography variant="button" color="text">
                 Don&apos;t have an account?{" "}
@@ -176,5 +187,4 @@ function Basic() {
   );
 }
 
-export default Basic;
-
+export default SignIn;

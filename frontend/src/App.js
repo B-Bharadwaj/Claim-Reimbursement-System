@@ -1,17 +1,5 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
+/* eslint-disable prettier/prettier */
+import SignIn from "layouts/authentication/sign-in";
 
 import { useState, useEffect, useMemo } from "react";
 
@@ -44,7 +32,8 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 
 // Material Dashboard 2 React routes
-import routes from "routes";
+import getRoleRoutes from "routes.claims";
+
 
 // Material Dashboard 2 React contexts
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
@@ -68,6 +57,10 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+  const role = localStorage.getItem("role") || "EMPLOYEE";
+  const routes = useMemo(() => getRoleRoutes(role), [role]);
+  const token = localStorage.getItem("access");
+
 
   // Cache for the rtl
   useMemo(() => {
@@ -165,9 +158,11 @@ export default function App() {
           </>
         )}
         {layout === "vr" && <Configurator />}
+        
         <Routes>
           {getRoutes(routes)}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
+          <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
         </Routes>
       </ThemeProvider>
     </CacheProvider>
@@ -190,9 +185,34 @@ export default function App() {
       )}
       {layout === "vr" && <Configurator />}
       <Routes>
-        {getRoutes(routes)}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        {/* Always allow auth pages */}
+        <Route path="/authentication/sign-in" element={<SignIn />} />
+
+        {/* Everything else requires token */}
+        {token ? (
+          <>
+            {getRoutes(routes)}
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to={
+                    role === "MANAGER"
+                      ? "/manager/review-claims"
+                      : role === "FINANCE"
+                      ? "/finance/payments"
+                      : "/employee/my-claims"
+                  }
+                  replace
+                />
+              }
+            />
+          </>
+        ) : (
+          <Route path="*" element={<Navigate to="/authentication/sign-in" replace />} />
+        )}
       </Routes>
+
     </ThemeProvider>
   );
 }

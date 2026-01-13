@@ -1,33 +1,22 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import React from "react";
-import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import ReactDOM from "react-dom/client";
 import App from "App";
+import { BrowserRouter } from "react-router-dom";
 
-// Material Dashboard 2 React Context Provider
+// Material Dashboard 2 React Provider
 import { MaterialUIControllerProvider } from "context";
 
-const container = document.getElementById("app");
-const root = createRoot(container);
+// Your Auth Provider
+import { AuthProvider } from "context/AuthContext";
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <BrowserRouter>
     <MaterialUIControllerProvider>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </MaterialUIControllerProvider>
   </BrowserRouter>
 );
