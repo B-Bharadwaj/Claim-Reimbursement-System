@@ -7,6 +7,12 @@ from rest_framework import status as drf_status
 from .models import Expense
 from .serializers import ExpenseSerializer
 
+from rest_framework import viewsets
+from .models import Receipt
+from .serializers import ReceiptUploadSerializer
+class ReceiptViewSet(viewsets.ModelViewSet):
+    queryset = Receipt.objects.all().order_by("-id")
+    serializer_class = ReceiptUploadSerializer
 
 def user_role(user):
     # relies on your CustomUser.role values: EMPLOYEE / MANAGER / FINANCE

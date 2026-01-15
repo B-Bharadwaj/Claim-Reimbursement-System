@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Expense
+from django.conf import settings
+from .models import Expense, Receipt
+from .services.ocr_client import call_ocr_service, OCRServiceError
 
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,3 +33,36 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+
+class ReceiptUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Receipt
+        fields = ["id", "expense", "file", "ocr_status", "ocr_confidence", "ocr_result", "ocr_error"]
+        read_only_fields = ["ocr_status", "ocr_confidence", "ocr_result", "ocr_error"]
+
+    def create(self, validated_data):
+        receipt = super().create(validated_data)
+
+        # default
+        receipt.ocr_status = "PENDING"
+        receipt.save(update_fields=["ocr_status"])
+
+        try:
+            ocr_json = call_ocr_service(
+                base_url=settings.OCR_SERVICE_URL,
+                file_path=receipt.file.path,
+                timeout_seconds=settings.OCR_TIMEOUT_SECONDS,
+            )
+            receipt.ocr_status = "SUCCESS"
+            receipt.ocr_result = ocr_json
+            receipt.ocr_confidence = ocr_json.get("confidence")
+            receipt.ocr_error = None
+            receipt.save(update_fields=["ocr_status", "ocr_result", "ocr_confidence", "ocr_error"])
+        except OCRServiceError as e:
+            receipt.ocr_status = "FAILED"
+            receipt.ocr_error = str(e)
+            receipt.save(update_fields=["ocr_status", "ocr_error"])
+
+        return receipt

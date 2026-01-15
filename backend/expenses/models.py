@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 
+
 class Expense(models.Model):
     class Category(models.TextChoices):
         TRAVEL = "TRAVEL", "Travel"
@@ -21,10 +22,12 @@ class Expense(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
     description = models.TextField(blank=True)
+
+    # ⚠️ Optional: you can keep this for now, but it overlaps with Receipt model.
     receipt = models.FileField(upload_to="receipts/", blank=True, null=True)
+
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
 
-    # Who submitted and who acted
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True, blank=True,
@@ -61,3 +64,23 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.amount} ({self.status})"
+
+
+class Receipt(models.Model):
+    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name="receipts")
+    file = models.FileField(upload_to="receipts/")
+
+    OCR_STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("SUCCESS", "Success"),
+        ("FAILED", "Failed"),
+    ]
+    ocr_status = models.CharField(max_length=10, choices=OCR_STATUS_CHOICES, default="PENDING")
+    ocr_confidence = models.FloatField(null=True, blank=True)
+    ocr_result = models.JSONField(null=True, blank=True)
+    ocr_error = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Receipt({self.id}) for Expense({self.expense_id})"
