@@ -10,21 +10,34 @@ The system enables **Employees** to submit expense claims, **Managers** to revie
 
 ## System Architecture Overview
 
-The application follows a **modular, service-oriented architecture**:
+The application follows a **clean, service-oriented architecture** composed of four primary components, each with a clearly defined responsibility.
 
-- **Frontend (React)**  
-  Provides role-based dashboards and workflows for Employees, Managers, and Finance users. Handles authentication, routing, and secure API communication.
+### Frontend (React)
+- Provides role-based dashboards for Employees, Managers, and Finance users
+- Handles authentication, protected routing, and secure API communication
+- Integrates OCR results into claim forms with editable auto-fill
+- Automatically refreshes expired access tokens for a seamless user experience
 
-- **Backend (Django + DRF)**  
-  Exposes REST APIs for authentication, claims, approvals, and payments. Enforces business rules, claim lifecycle transitions, and role-based permissions.
+### Backend (Django + Django REST Framework)
+- Exposes RESTful APIs for authentication, claims, approvals, and payments
+- Enforces claim lifecycle transitions and role-based permissions
+- Manages receipt uploads and associates OCR results with claims
+- Acts as the orchestration layer between the frontend, database, and OCR service
 
-- **OCR Microservice (FastAPI)**  
-  A separate service responsible for extracting structured data (vendor, date, amount) from uploaded receipt images or PDFs.
+### Database (PostgreSQL)
+- Serves as the primary persistent data store
+- Stores users, roles, claims, receipts, OCR metadata, and workflow states
+- Ensures data integrity through relational modeling and constraints
+- Supports transactional operations required for financial approval workflows
 
-- **Database (PostgreSQL)**  
-  Stores users, claims, receipts, workflow states, and OCR metadata.
+### OCR Microservice (FastAPI)
+- Dedicated microservice for receipt text extraction
+- Processes receipt images and PDFs using Tesseract OCR
+- Extracts structured data including vendor, date, amount, confidence score, and raw text
+- Designed to be independently deployable and replaceable
 
-All services communicate over secure HTTP using JWT-based authentication.
+Each component runs independently and communicates over HTTP, enabling scalability, maintainability, and a clear separation of concerns.
+
 
 ---
 
@@ -76,29 +89,24 @@ All services communicate over secure HTTP using JWT-based authentication.
 - Ensure financial audit readiness
 
 ---
+## 5. OCR Workflow
 
-## Tech Stack
+1. Employee uploads a receipt while creating a claim
+2. Django backend forwards the receipt to the OCR microservice
+3. OCR service extracts:
+   - Vendor name
+   - Receipt date
+   - Total amount
+   - Confidence score
+   - Raw extracted text
+4. OCR response is stored against the receipt
+5. Frontend auto-fills claim fields using OCR results
+6. Employee reviews and edits extracted values if needed
+7. Final submitted values are always user-authoritative
 
-### Backend
-- Django
-- Django REST Framework
-- JWT Authentication
-- PostgreSQL
-- Role-based permissions
-
-### Frontend
-- React
-- Role-based routing
-- Secure JWT handling
-- Modular dashboard layouts
-
-### OCR Service
-- FastAPI
-- Receipt text extraction
-- Vendor, date, and amount parsing (MVP)
+OCR acts as an assistive feature, not a mandatory or blocking dependency.
 
 ---
-
 ## Folder Structure
 
 ```bash
@@ -128,6 +136,27 @@ claim-reimbursement-system/
 └── README.md
 ```
 ---
+## Tech Stack
+
+### Backend
+- Django
+- Django REST Framework
+- JWT Authentication
+- PostgreSQL
+- Role-based permissions
+
+### Frontend
+- React
+- Role-based routing
+- Secure JWT handling
+- Modular dashboard layouts
+
+### OCR Service
+- FastAPI
+- Receipt text extraction
+- Vendor, date, and amount parsing (MVP)
+
+---
 ## Setup & Installation
 
 ### Prerequisites
@@ -156,7 +185,7 @@ npm install
 npm start
 ```
 ---
-### OCR Service Setup (FastAPI)- underprogress
+### OCR Service Setup (FastAPI)
 ```bash
 cd ocr-service
 python -m venv venv
@@ -182,19 +211,26 @@ OCR_SERVICE_URL=http://localhost:8001/ocr
 REACT_APP_API_BASE_URL=http://localhost:8000/api
 ```
 ---
-## API Overview (Key Endpoints)
+## 7. API Overview (High-Level)
+
 ### Authentication
-- POST /api/auth/login/
-- POST /api/auth/refresh/
+- `POST /api/auth/login/`
+- `POST /api/auth/refresh/`
 
 ### Claims
-- POST /api/claims/
-- GET /api/claims/my/
-- PUT /api/claims/{id}/submit/
+- `POST /api/claims/`
+- `GET /api/claims/my/`
+- `PUT /api/claims/{id}/submit/`
 
-### Approvals
-- PUT /api/claims/{id}/manager-approve/
-- PUT /api/claims/{id}/finance-approve/
+### Manager Actions
+- `PUT /api/claims/{id}/manager-approve/`
+- `PUT /api/claims/{id}/manager-reject/`
 
-### OCR
-- POST /ocr (FastAPI service)
+### Finance Actions
+- `PUT /api/claims/{id}/finance-approve/`
+- `PUT /api/claims/{id}/mark-paid/`
+
+### OCR Service
+- `POST /ocr`
+
+---
