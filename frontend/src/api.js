@@ -96,3 +96,15 @@ export async function uploadReceipt(expenseId, file) {
   }
   return data; // includes ocr_status + ocr_result
 }
+export async function fetchReceiptBlob(expenseId, download = false) {
+  const res = await apiFetch(`/api/expenses/${expenseId}/receipt/?download=${download ? 1 : 0}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to fetch receipt");
+  }
+
+  return await res.blob();
+}

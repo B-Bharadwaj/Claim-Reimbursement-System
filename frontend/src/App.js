@@ -15,8 +15,8 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 
 // Material Dashboard 2 React example components
-import Sidenav from "examples/Sidenav";
-import Configurator from "examples/Configurator";
+//import Sidenav from "examples/Sidenav";
+//import Configurator from "examples/Configurator";
 
 // Material Dashboard 2 React themes
 import theme from "assets/theme";
@@ -60,8 +60,7 @@ export default function App() {
   const role = localStorage.getItem("role") || "EMPLOYEE";
   const routes = useMemo(() => getRoleRoutes(role), [role]);
   const token = localStorage.getItem("access");
-
-
+  
   // Cache for the rtl
   useMemo(() => {
     const cacheRtl = createCache({

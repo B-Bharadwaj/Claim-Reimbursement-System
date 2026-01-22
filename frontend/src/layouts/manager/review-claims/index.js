@@ -1,5 +1,5 @@
+/* eslint-disable prettier/prettier */
 import { useEffect, useState } from "react";
-
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
@@ -10,7 +10,25 @@ import MDButton from "components/MDButton";
 import MDInput from "components/MDInput";
 
 import DataTable from "examples/Tables/DataTable";
-import { apiFetch } from "api";
+import { apiFetch, fetchReceiptBlob } from "api";
+
+const viewReceipt = async (expenseId) => {
+  const blob = await fetchReceiptBlob(expenseId, false);
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener,noreferrer");
+};
+
+const downloadReceipt = async (expenseId) => {
+  const blob = await fetchReceiptBlob(expenseId, true);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `receipt_${expenseId}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
 
 export default function ReviewClaims() {
   const [claims, setClaims] = useState([]);
@@ -50,6 +68,7 @@ export default function ReviewClaims() {
     { Header: "Amount", accessor: "amount" },
     { Header: "Category", accessor: "category" },
     { Header: "Status", accessor: "status" },
+    { Header: "Receipt", accessor: "receipt" },
     { Header: "Comment", accessor: "comment" },
     { Header: "Actions", accessor: "actions" },
   ];
@@ -59,6 +78,20 @@ export default function ReviewClaims() {
     amount: c.amount,
     category: c.category,
     status: c.status,
+    receipt: c.has_receipt ? (
+      <MDBox display="flex" gap={1}>
+        <MDButton color="info" size="small" variant="outlined" onClick={() => viewReceipt(c.id)}>
+          View
+        </MDButton>
+        <MDButton color="dark" size="small" variant="outlined" onClick={() => downloadReceipt(c.id)}>
+          Download
+        </MDButton>
+      </MDBox>
+    ) : (
+      <MDTypography variant="button" color="text">
+        —
+      </MDTypography>
+    ),
     comment: (
       <MDInput
         size="small"

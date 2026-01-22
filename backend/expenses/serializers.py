@@ -4,6 +4,7 @@ from .models import Expense, Receipt
 from .services.ocr_client import call_ocr_service, OCRServiceError
 
 class ExpenseSerializer(serializers.ModelSerializer):
+    has_receipt = serializers.SerializerMethodField()
     class Meta:
         model = Expense
         fields = [
@@ -25,6 +26,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
             "created_at",
             "updated_at",
+            "has_receipt",
         ]
         read_only_fields = [
             "submitted_by",
@@ -32,9 +34,14 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "paid_by",
             "created_at",
             "updated_at",
+            "has_receipt",
         ]
 
-
+    def get_has_receipt(self, obj):
+        # supports both old Expense.receipt and Receipt model
+        if getattr(obj, "receipt", None):
+            return True
+        return obj.receipts.exists()
 
 class ReceiptUploadSerializer(serializers.ModelSerializer):
     class Meta:
