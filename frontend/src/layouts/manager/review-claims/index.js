@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
+
 
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -132,7 +132,6 @@ export default function ReviewClaims() {
           )}
         </MDBox>
       </MDBox>
-      <Footer />
     </DashboardLayout>
   );
 }

@@ -22,8 +22,6 @@ import MDButton from "components/MDButton";
 // Authentication layout components
 import BasicLayout from "layouts/authentication/components/BasicLayout";
 
-// Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
 function decodeJwt(token) {
   const payload = token.split(".")[1];
@@ -88,7 +86,7 @@ function SignIn() {
   };
 
   return (
-    <BasicLayout image={bgImage}>
+    <BasicLayout>
       <Card>
         <MDBox
           variant="gradient"

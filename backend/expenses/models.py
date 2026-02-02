@@ -13,8 +13,8 @@ class Expense(models.Model):
     class Status(models.TextChoices):
         DRAFT = "DRAFT", "Draft"
         SUBMITTED = "SUBMITTED", "Submitted"
-        MANAGER_APPROVED = "MANAGER_APPROVED", "Manager Approved"
-        MANAGER_REJECTED = "MANAGER_REJECTED", "Manager Rejected"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
         FINANCE_APPROVED = "FINANCE_APPROVED", "Finance Approved"
         PAID = "PAID", "Paid"
 
@@ -23,14 +23,23 @@ class Expense(models.Model):
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
     description = models.TextField(blank=True)
 
-    # ⚠️ Optional: you can keep this for now, but it overlaps with Receipt model.
+    current_approver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="claims_to_approve",
+    )
+
+    # Optional legacy field (you already use Receipt model too)
     receipt = models.FileField(upload_to="receipts/", blank=True, null=True)
 
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
 
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
         related_name="claims_submitted",
     )
@@ -38,7 +47,8 @@ class Expense(models.Model):
     manager_comment = models.TextField(blank=True, default="")
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
         related_name="claims_approved",
     )
@@ -46,7 +56,8 @@ class Expense(models.Model):
     finance_comment = models.TextField(blank=True, default="")
     paid_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
         related_name="claims_paid",
     )
@@ -57,10 +68,10 @@ class Expense(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def can_approve_by_manager(self):
-        return self.status in [self.Status.SUBMITTED]
+        return self.status == self.Status.SUBMITTED
 
     def can_approve_by_finance(self):
-        return self.status == self.Status.MANAGER_APPROVED
+        return self.status == self.Status.APPROVED
 
     def __str__(self):
         return f"{self.title} - {self.amount} ({self.status})"
@@ -84,3 +95,23 @@ class Receipt(models.Model):
 
     def __str__(self):
         return f"Receipt({self.id}) for Expense({self.expense_id})"
+
+
+class ApprovalHistory(models.Model):
+    class Action(models.TextChoices):
+        SUBMITTED = "SUBMITTED", "Submitted"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+        FINANCE_APPROVED = "FINANCE_APPROVED", "Finance Approved"
+        PAID = "PAID", "Paid"
+
+    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name="approval_history")
+    approver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    action = models.CharField(max_length=30, choices=Action.choices)
+    remarks = models.TextField(blank=True, default="")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.expense_id} - {self.action}"

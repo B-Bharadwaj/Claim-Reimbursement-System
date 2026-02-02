@@ -2,7 +2,7 @@
 import { useState } from "react";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
+
 
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
@@ -184,7 +184,6 @@ export default function SubmitClaim() {
           )}
         </MDBox>
       </MDBox>
-      <Footer />
     </DashboardLayout>
   );
 }
